@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CryptoGuard AI – Meme Coin Risk</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 16px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #111827 0, #020617 55%, #000000 100%);
+            color: #e5e7eb;
+        }
+
+        .card {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px 24px 28px;
+            background: rgba(15, 23, 42, 0.92);
+            border-radius: 16px;
+            box-shadow:
+                0 18px 45px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(148, 163, 184, 0.15);
+            backdrop-filter: blur(12px);
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 24px;
+            letter-spacing: 0.03em;
+            color: #f9fafb;
+        }
+
+        p {
+            margin: 0 0 20px;
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 4px;
+            font-size: 13px;
+            color: #d1d5db;
+        }
+
+        input {
+            width: 100%;
+            padding: 9px 11px;
+            border-radius: 10px;
+            border: 1px solid #4b5563;
+            background: #020617;
+            color: #e5e7eb;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+
+        input::placeholder {
+            color: #6b7280;
+        }
+
+        input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
+            background: #020617;
+        }
+
+        .button-row {
+            margin-top: 18px;
+        }
+
+        button {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 999px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            cursor: pointer;
+            color: #0b1120;
+            background: linear-gradient(135deg, #22c55e, #a3e635);
+            box-shadow:
+                0 12px 25px rgba(34, 197, 94, 0.35),
+                0 0 0 1px rgba(190, 242, 100, 0.1);
+            transition:
+                transform 0.12s ease,
+                box-shadow 0.12s ease,
+                filter 0.12s ease,
+                background-position 0.2s ease;
+            background-size: 130% 130%;
+            background-position: 0% 50%;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow:
+                0 16px 32px rgba(34, 197, 94, 0.45),
+                0 0 0 1px rgba(190, 242, 100, 0.16);
+            filter: brightness(1.03);
+            background-position: 100% 50%;
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow:
+                0 10px 20px rgba(34, 197, 94, 0.4),
+                0 0 0 1px rgba(190, 242, 100, 0.22);
+            filter: brightness(0.97);
+        }
+
+        .result {
+            margin-top: 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.4;
+            border: 1px solid transparent;
+        }
+
+        .low {
+            background: rgba(22, 163, 74, 0.18);
+            border-color: rgba(34, 197, 94, 0.5);
+            color: #bbf7d0;
+        }
+
+        .medium {
+            background: rgba(234, 179, 8, 0.18);
+            border-color: rgba(234, 179, 8, 0.6);
+            color: #fef3c7;
+        }
+
+        .high {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(248, 113, 113, 0.7);
+            color: #fee2e2;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>CryptoGuard AI – Meme Coin Risk</h1>
+        <p>Введите сеть (chainId) и адрес пары (pairAddress) с DexScreener, чтобы получить оценку риска по модели.</p>
+
+        <label>Chain ID (например, solana):</label>
+        <input id="chainId" value="solana">
+
+        <label>Pair Address:</label>
+        <input id="pairAddress" placeholder="вставь адрес пары">
+
+        <div class="button-row">
+            <button onclick="analyze()">Analyze</button>
+        </div>
+
+        <div id="result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        async function analyze() {
+            const chainId = document.getElementById('chainId').value.trim();
+            const pairAddress = document.getElementById('pairAddress').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = 'Analyzing...';
+
+            if (!pairAddress) {
+                resultDiv.textContent = 'Введите pairAddress.';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chainId, pairAddress })
+                });
+                const data = await resp.json();
+                if (!resp.ok) {
+                    resultDiv.textContent = 'Error: ' + (data.error || resp.statusText);
+                    return;
+                }
+
+                const cls = data.risk_class;
+                const score = (data.risk_score_model || 0).toFixed(1);
+
+                let label = '';
+                let css = 'result ';
+                if (cls === 2) {
+                    label = 'High risk';
+                    css += 'high';
+                } else if (cls === 1) {
+                    label = 'Medium risk';
+                    css += 'medium';
+                } else {
+                    label = 'Low risk';
+                    css += 'low';
+                }
+
+                resultDiv.className = css;
+                resultDiv.textContent = `${label} (${score}/100 by model).`;
+
+            } catch (e) {
+                resultDiv.textContent = 'Error: ' + e;
+            }
+        }
+    </script>
+</body>
+</html>
